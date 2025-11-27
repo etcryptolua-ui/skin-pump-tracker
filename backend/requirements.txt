@@ -1,0 +1,11 @@
+fastapi[all]
+uvicorn[standard]
+SQLAlchemy
+psycopg2-binary
+alembic
+httpx
+beautifulsoup4
+pandas
+python-dotenv
+python-telegram-bot==13.7
+APScheduler
