@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Skin Pump Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0f1116;
+      color: #fff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .card {
+      background: #1a1d24;
+      padding: 20px;
+      margin: 15px 0;
+      border-radius: 10px;
+      border: 1px solid #2a2f3a;
+    }
+
+    .card strong {
+      color: #4fb3ff;
+    }
+
+    #loading {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 18px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      padding: 12px;
+      border-bottom: 1px solid #2a2f3a;
+      text-align: left;
+    }
+
+    th {
+      background: #242832;
+    }
+  </style>
+</head>
+<body>
+  <h1>Skin Pump Tracker 📈</h1>
+
+  <div id="loading">Carregando dados do Buff163...</div>
+
+  <table id="skin-table" style="display:none;">
+    <thead>
+      <tr>
+        <th>Skin</th>
+        <th>Preço Atual</th>
+        <th>Variação 24h</th>
+        <th>Variação 7 dias</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody id="skin-body"></tbody>
+  </table>
+
+  <script>
+    async function loadData() {
+      // API pública de exemplo (simulação)
+      const response = await fetch("https://raw.githubusercontent.com/ChatGPT-Datasets/cs-skin-data/main/skins.json");
+      const data = await response.json();
+
+      document.getElementById("loading").style.display = "none";
+      document.getElementById("skin-table").style.display = "table";
+
+      const body = document.getElementById("skin-body");
+
+      data.forEach(skin => {
+        const tr = document.createElement("tr");
+
+        let status = "Normal";
+        if (skin.change24h >= 8 || skin.change7d >= 15) {
+          status = "🔥 Possível Pump";
+        }
+        if (skin.change24h <= -8) {
+          status = "🔻 Queda Forte";
+        }
+
+        tr.innerHTML = `
+          <td>${skin.name}</td>
+          <td>$${skin.price.toFixed(2)}</td>
+          <td>${skin.change24h}%</td>
+          <td>${skin.change7d}%</td>
+          <td>${status}</td>
+        `;
+
+        body.appendChild(tr);
+      });
+    }
+
+    loadData();
+  </script>
+</body>
+</html>
