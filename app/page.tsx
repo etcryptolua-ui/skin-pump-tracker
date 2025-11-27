@@ -6,127 +6,105 @@ export default function Home() {
   const [itemId, setItemId] = useState("");
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function fetchData() {
     if (!itemId) return;
 
     setLoading(true);
+    setError("");
+    setData(null);
 
-    const res = await fetch(`/api/buff?itemId=${itemId}`);
-    const json = await res.json();
+    try {
+      const res = await fetch(`/api/buff?itemId=${itemId}`);
 
-    setData(json);
+      if (!res.ok) {
+        setError("Erro ao buscar dados.");
+        setLoading(false);
+        return;
+      }
+
+      const json = await res.json();
+
+      if (json.error) {
+        setError(json.error);
+      } else {
+        setData(json);
+      }
+    } catch (e) {
+      setError("Erro de rede.");
+    }
+
     setLoading(false);
   }
 
-  // --- ANALISADOR DE PUMP ---
-  let analysis = null;
-
-  if (data && data.data && data.data.items) {
-    const offers = data.data.items;
-
-    const prices = offers.map((o: any) => parseFloat(o.price));
-    const stock = offers.length;
-    const minPrice = Math.min(...prices);
-    const avgPrice = prices.reduce((a, b) => a + b, 0) / prices.length;
-
-    const spread = prices[1] ? prices[1] - prices[0] : 0;
-    const pricePressure = (prices[0] / avgPrice) * 100;
-
-    let risk = 0;
-    if (spread > 5) risk += 30;
-    if (pricePressure > 105) risk += 30;
-    if (stock < 20) risk += 40;
-
-    let label = "Normal";
-    let color = "#4CAF50";
-
-    if (risk >= 40 && risk < 70) {
-      label = "Possível pump iniciando";
-      color = "#FFC107";
-    } else if (risk >= 70) {
-      label = "⚠️ PUMP forte em andamento!";
-      color = "#F44336";
-    }
-
-    analysis = {
-      stock,
-      minPrice,
-      avgPrice: Number(avgPrice.toFixed(2)),
-      spread,
-      risk,
-      label,
-      color,
-    };
-  }
-
   return (
-    <div style={{ padding: 20, fontFamily: "Arial", maxWidth: 600, margin: "auto" }}>
-      <h1 style={{ fontSize: 24, marginBottom: 20 }}>Buff Monitor – Pump Detector</h1>
+    <div
+      style={{
+        padding: 20,
+        fontFamily: "Arial",
+        maxWidth: 600,
+        margin: "auto",
+      }}
+    >
+      <h1 style={{ fontSize: 24, marginBottom: 20 }}>Buff Pump Detector</h1>
 
       <input
         type="text"
         placeholder="ID da skin no Buff (goods_id)"
         value={itemId}
         onChange={(e) => setItemId(e.target.value)}
-        style={{
-          padding: 10,
-          width: "100%",
-          marginBottom: 10,
-          border: "1px solid #ccc",
-          borderRadius: 5,
-        }}
+        style={{ padding: 10, width: "100%", marginBottom: 10 }}
       />
 
       <button
         onClick={fetchData}
         style={{
-          padding: "10px 20px",
           width: "100%",
-          background: "#4A76FD",
+          padding: 12,
+          background: "#4f46e5",
           color: "white",
+          borderRadius: 6,
           border: "none",
-          borderRadius: 5,
+          fontSize: 16,
           cursor: "pointer",
         }}
       >
-        Buscar dados
+        Buscar
       </button>
 
       {loading && <p style={{ marginTop: 20 }}>Carregando...</p>}
+      {error && (
+        <p style={{ marginTop: 20, color: "red", fontWeight: "bold" }}>
+          {error}
+        </p>
+      )}
 
       {data && (
-        <div style={{ marginTop: 20 }}>
-          <h2>Resultado</h2>
+        <div
+          style={{
+            marginTop: 20,
+            padding: 20,
+            border: "1px solid #ddd",
+            borderRadius: 8,
+          }}
+        >
+          <h2 style={{ fontSize: 18, marginBottom: 10 }}>Dados coletados</h2>
 
-          {/* Bloco de análise */}
-          {analysis && (
-            <div
-              style={{
-                background: analysis.color,
-                color: "white",
-                padding: 15,
-                borderRadius: 8,
-                marginBottom: 20,
-              }}
-            >
-              <strong>{analysis.label}</strong>
-              <p>Estoque atual: {analysis.stock}</p>
-              <p>Menor preço: {analysis.minPrice} RMB</p>
-              <p>Média das ofertas: {analysis.avgPrice} RMB</p>
-              <p>Spread: {analysis.spread.toFixed(2)} RMB</p>
-              <p>Índice de pump: {analysis.risk}%</p>
-            </div>
+          <p><strong>Menor preço no Buff:</strong> ¥ {data.lowest_price}</p>
+          <p><strong>Preço da Steam (Buff):</strong> ¥ {data.steam_price}</p>
+          <p><strong>Quantidade à venda:</strong> {data.sell_count}</p>
+
+          <h3 style={{ marginTop: 15 }}>Possível Pump?</h3>
+          {data.sell_count < 50 ? (
+            <p style={{ color: "red" }}>
+              🔥 Estoque muito baixo → possível início de pump
+            </p>
+          ) : (
+            <p style={{ color: "green" }}>
+              Estoque estável → sem sinais fortes de pump
+            </p>
           )}
-
-          {/* Lista das ofertas */}
-          <ul>
-            {data?.data?.items?.map((item: any, index: number) => (
-              <li key={index}>
-                {item.price} RMB — {item.asset_info?.paintwear}
-              </li>
-            ))}
-          </ul>
         </div>
       )}
     </div>
